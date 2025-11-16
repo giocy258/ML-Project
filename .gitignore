@@ -1,6 +1,8 @@
 #AGGIUNTE
 credentials.json
-
+pyproject.toml
+python-version
+uv.lock
 # DEFAULT
 # Byte-compiled / optimized / DLL files
 __pycache__/
