@@ -5,7 +5,15 @@ from googleapiclient.errors import HttpError
 from google.oauth2.credentials import Credentials
 
 
-def trova_slot_alternativo(creds: Credentials, duration_minutes: int, search_days: int = 7, buffer_minutes: int = 30) -> str:
+def trova_slot_alternativo(creds: Credentials, duration_minutes: int, start_search_from: datetime.datetime = None, search_days: int = 3, buffer_minutes: int = 30) -> str:
+    # ... setup ...
+    
+    # Se non viene passata una data specifica, usa ADESSO.
+    # Se viene passata (es: la data del conflitto), usa QUELLA.
+    if start_search_from:
+        now_local = start_search_from
+    else:
+        now_local = datetime.datetime.now(local_tz)
     """
     Trova il primo slot libero disponibile di durata richiesta nei prossimi giorni, 
     mantenendo un buffer di tempo tra gli eventi.

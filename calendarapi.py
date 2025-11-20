@@ -110,14 +110,9 @@ def read_calendar(creds: Credentials, date_info: dict) -> list:
                 .execute()
             )
             events = events_result.get("items", [])
-
-            # filtra solo gli eventi che iniziano con "UFS" o "UFT" # update legge anche "PW" e "Extra Orario"
-            filtered_events = [event for event in events if event.get("summary", "").startswith(("UFS", "UFT", "PW", "Extra Orario", "Extraorario", "SIMULAZIONE ESAME FINALE"))]
-
-            if filtered_events:
-                all_events.extend(filtered_events)
-
-            # incrementa la data per il giorno successivo
+            if events:
+                all_events.extend(events)
+           # incrementa la data per il giorno successivo
             current_date += datetime.timedelta(days=1)
 
         if not all_events: # evitabile, logging
@@ -201,112 +196,6 @@ def update_calendar(creds: Credentials, old_event: dict, new_event: dict): # agg
         print(f"Errore durante l'aggiornamento dell'evento '{old_event.get('summary', 'Senza titolo')}': {error}")
 
 
-def sync_calendar(creds: Credentials, date_info: dict):
-    """
-    Sincronizza gli eventi tra il file calendar.json e il calendario Google per l'intervallo di date specificato.
-
-    Se un evento presente su Google Calendar non è presente in calendar.json, viene eliminato.
-    Se un evento presente in calendar.json non è presente su Google Calendar, viene aggiunto.
-
-    Inoltre:
-      - Se nel file JSON la chiave "tooltip" è passata da "Registro lezione..." a "PRESENTE" o "ASSENTE"
-        e nell'evento Google Calendar la "description" inizia con "Registro lezione da compilare", l'evento viene aggiornato.
-      - Se il valore di "Aula" nel JSON differisce dalla "location" in Google Calendar, l'evento viene aggiornato.
-    
-    Args:
-        creds (Credentials): Credenziali per accedere all'API di Google Calendar.
-        date_info (dict): Dizionario contenente le date di inizio "start" e fine "end" 
-                        dell'intervallo da sincronizzare in formato YYYY-MM-DD.
-    """
-    try:
-        # legge gli eventi in calendar.json e li organizza in un dizionario
-        # la chiave del dizionario è una tupla composta da (prefisso, start), che permette di identificare univocamente ogni evento.
-        calendar_events = parser.read_json("calendar.json")
-        calendar_dict = {}
-
-        for ev in calendar_events:
-            materia = ev.get("Materia", "")
-
-            if materia:
-                # ottiene il prefisso dall'attributo "Materia" (es: "UFS02")
-                prefix = materia.split(" - ")[0].strip()
-                # ottiene l'orario di inizio dell'evento (es: "2025-03-25T08:40:00")
-                start = ev.get("start")                  
-                # salva l'evento nel dizionario con la chiave (prefix, start)
-                calendar_dict[(prefix, start)] = ev
-
-        # legge gli eventi dal calendario Google (sono già filtrati per UFS/UFT) # aggiunta PW e Extra Orario
-        google_events = read_calendar(creds, date_info)
-        google_set = set()
-
-        for event in google_events:
-            # ottiene il prefisso dallo summary (es: "UFS02")
-            summary = event.get("summary", "")
-            prefix = summary.split(" - ")[0].strip()
-            # ottiene la data di inizio dell'evento (considera sia "dateTime" che "date")
-            g_start = event["start"].get("dateTime", event["start"].get("date"))
-
-            # normalizza la data eliminando eventuale parte del fuso orario dopo il simbolo "T"
-            if "T" in g_start:
-                g_start_normalized = g_start.split("+")[0]
-            else:
-                g_start_normalized = g_start
-
-            # aggiunge la chiave (prefisso, start normalizzato) all'insieme degli eventi di Google
-            google_set.add((prefix, g_start_normalized))
-
-        # gestione degli eventi esistenti su Google Calendar
-        for event in google_events:
-            summary = event.get("summary", "")
-            prefix = summary.split(" - ")[0].strip()
-            g_start = event["start"].get("dateTime", event["start"].get("date"))
-
-            if "T" in g_start:
-                g_start_normalized = g_start.split("+")[0]
-            else:
-                g_start_normalized = g_start
-
-            key = (prefix, g_start_normalized)
-
-            if key in calendar_dict:
-                # se l'evento esiste nel JSON, ottiene il corrispondente evento dal file
-                json_event = calendar_dict[key]
-                # formatta l'evento dal JSON per ottenere i campi aggiornati
-                formatted_event = parser.format_event(json_event)
-
-                # controlla se occorre aggiornare l'evento in base al tooltip
-                tooltip_json = json_event.get("tooltip", "")
-                description_google = event.get("description", "")
-                update_tooltip = (tooltip_json in ["PRESENTE", "ASSENTE"] and 
-                                  description_google.startswith("Registro lezione da compilare"))
-
-                # controlla se occorre aggiornare l'evento in base alla location
-                location_json = formatted_event.get("location", "")
-                location_google = event.get("location", "")
-                update_location = (location_json != location_google)
-
-                if update_tooltip or update_location:
-                    print(f"{summary} con start {g_start} necessita aggiornamento (tooltip o aula modificati).")
-                    update_calendar(creds, event, json_event)
-
-            else:
-                # se l'evento è presente in Google Calendar, ma non nel file JSON, allora va eliminato
-                print(f"{summary} con start {g_start} non è presente in calendar.json e verrà eliminato.")
-                delete_calendar(creds, event)
-
-        # aggiunge gli eventi che sono presenti nel JSON ma non su Google Calendar
-        for key, ev in calendar_dict.items():
-            if key not in google_set:
-                print(f"Evento {ev.get('title', key)} presente in calendar.json ma mancante su Google Calendar; verrà aggiunto.")
-                add_calendar(creds, ev)
-
-        print("Sincronizzazione del calendario completata per l'intervallo specificato.")
-
-    except Exception as error:
-        print(f"Errore durante la sincronizzazione del calendario: {error}")
-
-
-# !!!!! TEST !!!!!
 def get_available_colors(creds):
     try:
         service = build("calendar", "v3", credentials=creds)
