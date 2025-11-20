@@ -26,7 +26,7 @@ def categorize_with_llm(instruction, email_content):
 # Logica principale
 def run_agent():
     # 1. Carica le istruzioni
-    instruction_prompt = load_prompt("prompts/instruction.md")
+    instruction_prompt = load_prompt(r"gmail_reader\prompts\instruction.md")
 
     # 2. Autenticazione (Utilizzare la libreria ufficiale di Google per l'API di Gmail)
     # SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
