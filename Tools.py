@@ -1,114 +1,83 @@
-# Importa i tool di ADK
-from google_adk import tool
-
-# Importa le librerie Google per l'API e l'autenticazione
+# agent_tools.py
 import datetime
-import os.path
 import json
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
+from calendarapi import accesso, read_calendar, add_calendar, delete_calendar
+# Assumo che tu abbia accesso al modulo parser o debba replicarne la logica qui
+# import parser 
 
-# --- Configurazione dell'Autenticazione ---
-
-# Definisci gli scopi (SCOPES). Inizia solo con readonly.
-# Se vuoi anche creare eventi, aggiungi 'https...auth/calendar'
-# e cancella token.json per ri-autenticarti.
-SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
-
-# I file si trovano nella root del progetto, non dentro /adk
-CREDENTIALS_FILE = 'credentials.json'
-TOKEN_FILE = 'token.json'
-
-def get_calendar_service():
+def tool_list_upcoming_events(days: int = 7):
     """
-    Funzione helper interna. 
-    Gestisce l'autenticazione OAuth 2.0 (flusso desktop)
-    e restituisce un oggetto 'service' pronto per l'uso.
+    Strumento per leggere gli eventi dei prossimi N giorni.
+    L'LLM userà questo per rispondere a "cosa ho da fare questa settimana?".
     """
-    creds = None
-    # Il file token.json memorizza l'autorizzazione dell'utente.
-    if os.path.exists(TOKEN_FILE):
-        creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+    creds = accesso() # 1. Le credenziali sono gestite INTERNAMENTE
+    
+    start_date = datetime.datetime.now()
+    end_date = start_date + datetime.timedelta(days=days)
+    
+    date_info = {
+        "start": start_date.strftime("%Y-%m-%d"),
+        "end": end_date.strftime("%Y-%m-%d")
+    }
+    
+    # Chiamiamo la tua funzione originale
+    events = read_calendar(creds, date_info)
+    
+    # Restituiamo una stringa o JSON semplificato all'LLM
+    if not events:
+        return "Nessun evento trovato."
+    
+    # Semplifichiamo l'output per risparmiare token all'LLM
+    output_list = []
+    for e in events:
+        start = e["start"].get("dateTime", e["start"].get("date"))
+        summary = e.get("summary", "Senza titolo")
+        output_list.append(f"- {start}: {summary}")
         
-    # Se le credenziali non sono valide o mancano, avvia il flusso di login.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            print('Refreshing expired credentials...')
-            creds.refresh(Request())
-        else:
-            print('Avvio del flusso di autenticazione...')
-            # Questo aprirà una finestra del browser LA PRIMA VOLTA
-            flow = InstalledAppFlow.from_client_secrets_file(
-                CREDENTIALS_FILE, SCOPES)
-            creds = flow.run_local_server(port=0)
-            
-        # Salva le credenziali per la prossima esecuzione
-        with open(TOKEN_FILE, 'w') as token:
-            token.write(creds.to_json())
-            print(f'Token salvato in {TOKEN_FILE}')
+    return "\n".join(output_list)
 
-    # Costruisci e restituisci il servizio
+def tool_add_event(summary: str, start_datetime: str, end_datetime: str, location: str = ""):
+    """
+    Aggiunge un evento al calendario.
+    Args:
+        summary: Titolo dell'evento.
+        start_datetime: Data inizio in formato ISO (es. 2025-11-20T15:00:00)
+        end_datetime: Data fine in formato ISO.
+        location: Luogo (opzionale).
+    """
+    creds = accesso()
+    
+    # 2. Costruiamo il dizionario che la tua 'add_calendar' si aspetta
+    # Nota: Qui stiamo simulando quello che farebbe il tuo 'parser.format_event'
+    event_dict = {
+        "summary": summary,
+        "location": location,
+        "start": {"dateTime": start_datetime, "timeZone": "Europe/Rome"},
+        "end": {"dateTime": end_datetime, "timeZone": "Europe/Rome"},
+        # Se il tuo 'add_calendar' si aspetta chiavi specifiche per il parser, mettile qui
+    }
+    
+    # Nota: la tua add_calendar originale chiama parser.format_event(event).
+    # Assicurati che event_dict sia compatibile con quella chiamata, 
+    # oppure modifica add_calendar per accettare un oggetto evento standard di Google.
     try:
-        service = build('calendar', 'v3', credentials=creds)
-        return service
-    except HttpError as error:
-        print(f'Errore nella costruzione del servizio: {error}')
-        return None
+        add_calendar(creds, event_dict)
+        return f"Evento '{summary}' aggiunto correttamente."
+    except Exception as e:
+        return f"Errore durante l'aggiunta dell'evento: {str(e)}"
+    
 
-# --- Definizione dei Tool per l'Agente ---
+# TOOLS DA METTERE IN AGENTPY
+
+from langchain.tools import tool
+from calendarapi import accesso, add_calendar
+import datetime
+
 
 @tool
-def list_upcoming_events(max_results: int = 10) -> str:
-    """
-    Recupera i prossimi eventi (fino a 'max_results') dal calendario 
-    principale dell'utente. Restituisce gli eventi come stringa JSON.
-    """
-    print(f"Tool 'list_upcoming_events' chiamato con max_results={max_results}")
-    service = get_calendar_service()
-    if not service:
-        return "Errore: Impossibile autenticarsi con Google Calendar."
-
-    try:
-        # Chiama l'API Calendar
-        now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indica l'ora UTC
-        
-        events_result = service.events().list(
-            calendarId='primary', 
-            timeMin=now,
-            maxResults=max_results, 
-            singleEvents=True,
-            orderBy='startTime'
-        ).execute()
-        
-        events = events_result.get('items', [])
-
-        if not events:
-            return "Nessun evento imminente trovato."
-
-        # Formatta l'output per l'LLM
-        formatted_events = []
-        for event in events:
-            start = event['start'].get('dateTime', event['start'].get('date'))
-            formatted_events.append({
-                'summary': event['summary'],
-                'start': start
-            })
-        
-        # Restituisce una stringa JSON che l'LLM può interpretare
-        return json.dumps(formatted_events)
-
-    except HttpError as error:
-        return f"Si è verificato un errore API: {error}"
-
-# @tool
-# def create_calendar_event(summary: str, start_time: str, end_time: str) -> str:
-#     """
-#     Crea un nuovo evento sul calendario.
-#     Le date devono essere in formato ISO 8601 (es. '2025-11-17T09:00:00+01:00').
-#     """
-#     # Esercizio: implementa questa funzione!
-#     # Ricorda di cambiare SCOPES in '.../auth/calendar' e cancellare token.json
-#     pass
+def add_event_tool(summary:str, start_time:str, end_time:str):
+    creds=accesso()
+    event_dict={...}
+    add_calendar(creds,event_dict)
+    return "fatto"
+tools=[add_event_tool]

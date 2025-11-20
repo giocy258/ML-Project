@@ -84,10 +84,6 @@ def read_calendar(creds: Credentials, date_info: dict) -> list:
 
         # itera attraverso ogni giorno nell'intervallo
         while current_date <= end_date:
-            # salta i weekend (Saturday = 5, Sunday = 6)
-            if current_date.weekday() >= 5:
-                current_date += datetime.timedelta(days=1)
-                continue
 
             # definisci l'intervallo di tempo per il giorno corrente
             start_of_day_local = datetime.datetime(current_date.year, current_date.month, current_date.day, 8, 40, 0, tzinfo=local_tz)
