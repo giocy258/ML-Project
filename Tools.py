@@ -1,5 +1,5 @@
 # Importa i tool di ADK
-from google_adk import tool
+from google.adk import tools
 
 # Importa le librerie Google per l'API e l'autenticazione
 import datetime
@@ -60,7 +60,7 @@ def get_calendar_service():
 
 # --- Definizione dei Tool per l'Agente ---
 
-@tool
+@tools
 def list_upcoming_events(max_results: int = 10) -> str:
     """
     Recupera i prossimi eventi (fino a 'max_results') dal calendario 
