@@ -7,7 +7,7 @@ from google.oauth2.credentials import Credentials
 
 def trova_slot_alternativo(creds: Credentials, duration_minutes: int, start_search_from: datetime.datetime = None, search_days: int = 3, buffer_minutes: int = 30) -> str:
     # ... setup ...
-    
+    local_tz=ZoneInfo("Europe/Rome")
     # Se non viene passata una data specifica, usa ADESSO.
     # Se viene passata (es: la data del conflitto), usa QUELLA.
     if start_search_from:
@@ -29,7 +29,6 @@ def trova_slot_alternativo(creds: Credentials, duration_minutes: int, start_sear
     """
     try:
         service = build("calendar", "v3", credentials=creds)
-        local_tz = ZoneInfo("Europe/Rome")
     except Exception as e:
         return f"Errore di inizializzazione: {e}"
 
