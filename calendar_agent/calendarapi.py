@@ -3,8 +3,8 @@
 import datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError # pip install tzdata
 import os.path
-
-import parser
+import os
+from . import my_parser
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -15,41 +15,45 @@ from googleapiclient.errors import HttpError
 
 def accesso() -> Credentials:
     """
-    La funzione gestisce l'autenticazione con l'API di Google Calendar.
-
-    Cerca le credenziali salvate in "token.json": 
-    se sono valide le utilizza, 
-    se sono scadute prova a rinnovarle, 
-    altrimenti avvia il flusso di login per ottenere nuove credenziali, le salva e le restituisce.
-
-    Returns:
-        Credentials: Oggetto Credentials di google.oauth2.credentials da usare nelle funzioni di chiamata API.
+    Gestisce l'autenticazione cercando i file json NELLA STESSA CARTELLA di questo script.
     """
-    # If modifying these scopes, delete the file token.json.
+    import os # Assicuriamoci che os sia importato
+    
     SCOPES = ['https://www.googleapis.com/auth/calendar']
-
     creds = None
-    # The file token.json stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
-    if os.path.exists("token.json"):
-        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
-    # If there are no (valid) credentials available, let the user log in.
+    
+    # --- MAGIA DEI PERCORSI ASSOLUTI ---
+    # 1. Trova la cartella dove si trova fisicamente QUESTO file (calendarapi.py)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # 2. Costruisce i percorsi completi ("C:/.../calendar/token.json")
+    token_path = os.path.join(base_dir, "token.json")
+    creds_path = os.path.join(base_dir, "credentials.json")
+    # -----------------------------------
+
+    # Usa token_path invece di "token.json"
+    if os.path.exists(token_path):
+        creds = Credentials.from_authorized_user_file(token_path, SCOPES)
+        
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
-            # raise exceptions.RefreshError per token scaduto
         else:
+            # CONTROLLO DI SICUREZZA
+            if not os.path.exists(creds_path):
+                raise FileNotFoundError(f"CRITICO: Non trovo il file credentials.json qui: {creds_path}")
+                
+            # Usa creds_path invece di "credentials.json"
             flow = InstalledAppFlow.from_client_secrets_file(
-                "credentials.json", SCOPES
+                creds_path, SCOPES
             )
             creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
-        with open("token.json", "w") as token:
+            
+        # Salva il token nel percorso corretto
+        with open(token_path, "w") as token:
             token.write(creds.to_json())
-    
-    return creds
 
+    return creds
 
 def read_calendar(creds: Credentials, date_info: dict) -> list: 
     """
@@ -86,8 +90,8 @@ def read_calendar(creds: Credentials, date_info: dict) -> list:
         while current_date <= end_date:
 
             # definisci l'intervallo di tempo per il giorno corrente
-            start_of_day_local = datetime.datetime(current_date.year, current_date.month, current_date.day, 8, 40, 0, tzinfo=local_tz)
-            end_of_day_local = datetime.datetime(current_date.year, current_date.month, current_date.day, 17, 40, 0, tzinfo=local_tz)
+            start_of_day_local = datetime.datetime(current_date.year, current_date.month, current_date.day, 00, 00, 0, tzinfo=local_tz)
+            end_of_day_local = datetime.datetime(current_date.year, current_date.month, current_date.day, 23, 59, 0, tzinfo=local_tz)
 
             # converti in UTC usando il metodo standard astimezone
             start_of_day_utc = start_of_day_local.astimezone(datetime.timezone.utc).isoformat()
@@ -142,7 +146,7 @@ def add_calendar(creds: Credentials, event: dict): # aggiunge singolarmente perc
     try:
         service = build("calendar", "v3", credentials=creds)
 
-        event = parser.format_event(event)
+        event = my_parser.format_event(event)
         evento = service.events().insert(calendarId = "primary", body = event).execute()
 
         print(f"Evento creato: {evento.get("htmlLink")}")
@@ -186,7 +190,7 @@ def update_calendar(creds: Credentials, old_event: dict, new_event: dict): # agg
         service = build("calendar", "v3", credentials=creds)
 
         event_id = old_event.get('id')
-        new_event = parser.format_event(new_event)
+        new_event = my_parser.format_event(new_event)
 
         service.events().update(calendarId='primary', eventId=event_id, body=new_event).execute()
 
