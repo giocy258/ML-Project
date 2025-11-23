@@ -1,14 +1,15 @@
 import json
-import requests
+import pandas as pd
 import streamlit as st
 from streamlit_calendar import calendar
 from utility import stream_ollama
-from cal_config import calendar_options, calendar_events, custom_css
+from cal_config import calendar_options, custom_css
 
 USER_AVATAR = '🍌'
 BOT_AVATAR = '🗓️'
 OLLAMA_MODEL = 'llama3:8b-instruct-q5_1'
 
+pd.read_json(r'.\streamlit\cal_events.json')
 st.set_page_config(page_title="Calendario", page_icon="🍌", layout="wide")
 
 # Imposta modello di default (Ollama)
@@ -26,12 +27,11 @@ st.markdown("<h1 style='text-align: center;'>Calendario</h1>", unsafe_allow_html
 col1, col2 = st.columns(2)
 
 with col1:
-    if st.button("Apri Gmail"):
-        st.markdown('<a href="https://mail.google.com" target="_blank">Vai a Gmail</a>', unsafe_allow_html=True)
+    st.link_button("📧 Gmail", "https://mail.google.com")
 
 with col2:
-    if st.button("Apri Google Calendar"):
-        st.markdown('<a href="https://calendar.google.com" target="_blank">Vai a Google Calendar</a>', unsafe_allow_html=True)
+    st.link_button("📆 Calendar", "https://calendar.google.com")
+
 
 
 # ============ CHAT ============
@@ -58,12 +58,17 @@ if prompt:
 
 
 # ============ SLIDEBAR ============
+with open('streamlit/cal_events.json', 'r', encoding='utf-8') as f:
+    cal_events = json.load(f)
+#print(type(cal_events), cal_events)
+
 with st.sidebar:
     calendar = calendar(
-        events=calendar_events,
+        events=cal_events,
         options=calendar_options,
         custom_css=custom_css,
         key='calendar' # Assign a widget key to prevent state loss,
     )
+    st.write("_#Se la visualizzazione del calendario esplode, riavviare la pagina_")
 
 #st.write(calendar)
