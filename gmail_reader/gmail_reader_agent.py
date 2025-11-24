@@ -41,7 +41,7 @@ def categorize_with_llm(email_content):
         name="gmail_reader_agent",
         description=load_description(file_path=PROMPT_FOLDER / "description.md"),
         instruction=load_instruction(file_path=PROMPT_FOLDER / "instruction.md"),
-        model="gemini-2.5-flash-lite",,
+        model="gemini-2.5-flash-lite",
         tools=[],
     )
     # --- Simulazione ---
