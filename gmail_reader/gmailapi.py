@@ -11,7 +11,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 # --- CONFIGURAZIONE ---
-# Se modifichi questi scope, elimina il file token_gmail.json.
+# Se modifichi questi scope, elimina il file token.json.
 SCOPES = [
     'https://www.googleapis.com/auth/gmail.readonly',
     'https://www.googleapis.com/auth/gmail.send',
@@ -21,7 +21,6 @@ SCOPES = [
 def accesso() -> Credentials:
     """
     Gestisce l'autenticazione per GMAIL cercando i file json NELLA STESSA CARTELLA di questo script.
-    Stessa logica di calendarapi.py per evitare conflitti di percorso.
     """
     creds = None
     
@@ -30,7 +29,7 @@ def accesso() -> Credentials:
     base_dir = os.path.dirname(os.path.abspath(__file__))
     
     # 2. Costruisce i percorsi completi (token separato per gmail)
-    token_path = os.path.join(base_dir, "token_gmail.json") 
+    token_path = os.path.join(base_dir, "token.json") 
     creds_path = os.path.join(base_dir, "credentials.json")
     # -----------------------------------
 
