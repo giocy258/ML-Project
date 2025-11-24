@@ -29,19 +29,39 @@ def stream_ollama(prompt, model, timeout=300):
 
 
 
-#Prende in input i singoli dati, imposta il datetime corretto, e aggiorna il json
-def add_event(title, start, end, path='streamlit/cal_events.json'):
+def add_event(event = None, title = None, start = None, end = None, path='streamlit/cal_events.json'):
+    """Prende in input un evento (dizionario) o i singoli dati, imposta il datetime corretto, e aggiorna il json"""
     with open(path, 'r', encoding='utf-8') as f:
         data = json.load(f)
 
-    start_formatted = datetime.strptime(start, "%Y-%m-%dT%H:%M:%S")
-    end_formatted = datetime.strptime(end, "%Y-%m-%dT%H:%M:%S")
-    event = {
-        "title": title,
-        "start": start_formatted,
-        "end": end_formatted,
-    }
+    if(event):
+        start_formatted = datetime.strptime(event.get('start').get('dateTime'), "%Y-%m-%dT%H:%M:%S")
+        end_formatted = datetime.strptime(event.get('end').get('dateTime'), "%Y-%m-%dT%H:%M:%S")
+        event = {
+            "title": event.get('summary'),
+            "start": start_formatted,
+            "end": end_formatted
+        }
+
+    elif(title and start and end):
+        start_formatted = datetime.strptime(start, "%Y-%m-%dT%H:%M:%S")
+        end_formatted = datetime.strptime(end, "%Y-%m-%dT%H:%M:%S")
+        event = {
+            "title": title,
+            "start": start_formatted,
+            "end": end_formatted
+        }
+
+    else:
+        print(f'''
+            ERROR: failed to save event, passed empty arguments:
+            event: {event},
+            title: {title},
+            start: {start},
+            end: {end}.
+        ''')
 
     data.append(event)
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
+        return True

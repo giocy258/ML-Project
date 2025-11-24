@@ -33,7 +33,7 @@ def format_event(event_data: dict) -> dict:
     # Costruzione del dizionario finale per le API Google
     google_event_resource = {
         'summary': summary,
-        'location': location,
+        'location': '',  # La location è vuota, ma è un campo atteso da GCal
         'description': description,
         'start': start_data,
         'end': end_data,
