@@ -167,6 +167,7 @@ def tool_delete_event(summary: str, date_iso: str):
 
 def tool_update_event(
     old_summary: str, 
+    
     old_date_iso: Optional[str]=None,
     new_summary: Optional[str] = None,     # <--- CAMBIA QUI
     new_start_iso: Optional[str] = None,   # <--- CAMBIA QUI

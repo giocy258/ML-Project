@@ -1,6 +1,7 @@
 #AGGIUNTE
 credentials.json
 pyproject.toml
+token.json
 python-version
 uv.lock
 # DEFAULT
