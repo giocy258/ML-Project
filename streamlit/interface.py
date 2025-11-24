@@ -1,9 +1,21 @@
+from pathlib import Path
+import sys
+
+# Path del file attuale
+HERE = Path(__file__).resolve()
+
+# ROOT del progetto → cartella superiore alla cartella "streamlit"
+ROOT_DIR = HERE.parent.parent
+
+# aggiungi al Pythonpath
+sys.path.insert(0, str(ROOT_DIR))
+
 import json
 import pandas as pd
 import streamlit as st
 from streamlit_calendar import calendar
-from utility import stream_ollama
 from cal_config import calendar_options, custom_css
+from calendar_agent.agent import root_agent
 
 USER_AVATAR = '🍌'
 BOT_AVATAR = '🗓️'
@@ -42,16 +54,14 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"], avatar=message.get('avatar')):
         st.markdown(message["content"])
 
-prompt = st.chat_input('Ask me a question')
-
-if prompt:
+if prompt:= st.chat_input('Ask me a question'):
     with st.chat_message('user', avatar=USER_AVATAR):
         st.markdown(prompt)
 
     st.session_state.messages.append({"role": "user", 'avatar': USER_AVATAR, "content": prompt})
 
     with st.chat_message('assistant', avatar=BOT_AVATAR):
-        response = st.write_stream(stream_ollama(prompt, model = OLLAMA_MODEL))
+        response = root_agent.run(prompt, history=st.session_state.messages)
 
     st.session_state.messages.append({"role": "assistant", 'avatar': BOT_AVATAR, "content": response})
 

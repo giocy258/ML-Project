@@ -1,4 +1,4 @@
-from calendar_agent.calendarapi import read_calendar
+from calendar_agent.calendarapi import read_calendar, accesso
 from dotenv import load_dotenv
 import os
 
@@ -10,6 +10,6 @@ date = {
     'end': '2025-12-31'
 }
 
-creds = None
+creds = accesso()
 
 print(read_calendar(creds, date))
