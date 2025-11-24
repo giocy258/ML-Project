@@ -6,12 +6,6 @@ from dotenv import load_dotenv
 # Nota il punto . davanti
 from .utils import load_markdown_content
 from .tools import (
-    tool_find_availability,
-    tool_list_upcoming_events,
-    tool_force_add_event,
-    tool_safe_add_event,
-    tool_delete_event,
-    tool_update_event,
     tool_datetime_now
 )
 

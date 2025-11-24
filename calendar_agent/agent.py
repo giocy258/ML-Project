@@ -40,7 +40,7 @@ calendaragent = LlmAgent(
     # Ora passiamo i percorsi calcolati, non stringhe fisse
     description=load_markdown_content(DESCRIPTION_PATH),
     instruction=load_markdown_content(INSTRUCTION_PATH),
-    model=PRO_MODEL,
+    model=FLASH_MODEL,
     tools=[
         tool_find_availability,
         tool_list_upcoming_events,
