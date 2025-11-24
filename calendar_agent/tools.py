@@ -5,6 +5,24 @@ from .calendarapi import accesso, read_calendar, add_calendar, delete_calendar, 
 from .trova_un_buco import trova_slot_alternativo
 
 
+def tool_datetime_now(tz_name: str = "Europe/Rome") -> datetime.datetime:
+    """
+    Restituisce la data e l'ora attuali localizzate (aware datetime object).
+
+    Args:
+        tz_name (str): Il nome del fuso orario da usare. Di default "Europe/Rome".
+
+    Returns:
+        datetime.datetime: Oggetto datetime localizzato.
+    """
+    local_tz = ZoneInfo(tz_name)
+    return datetime.datetime.now(local_tz)
+
+# Esempio di utilizzo (solo per test):
+# ora = get_current_datetime()
+# print(f"L'ora attuale a Roma è: {ora}")
+
+
 def tool_list_upcoming_events(days: int = 7) -> str:
     """
     Elenca gli eventi in calendario per i prossimi N giorni.

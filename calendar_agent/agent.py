@@ -11,7 +11,8 @@ from .tools import (
     tool_force_add_event,
     tool_safe_add_event,
     tool_delete_event,
-    tool_update_event
+    tool_update_event,
+    tool_datetime_now
 )
 
 # --- MAGIA DEI PERCORSI (LA SOLUZIONE) ---
@@ -46,7 +47,8 @@ calendaragent = LlmAgent(
         tool_force_add_event,
         tool_safe_add_event,
         tool_delete_event,
-        tool_update_event
+        tool_update_event,
+        tool_datetime_now
     ],
     sub_agents=[]
 )
