@@ -4,7 +4,6 @@ import os
 import base64
 from email.message import EmailMessage
 from typing import List, Optional, Dict, Any
-
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -67,7 +66,6 @@ def accesso() -> Credentials:
 def read_emails(creds: Credentials, query: str = 'is:unread', max_results: int = 10) -> List[Dict[str, Any]]:
     """
     Legge le email da Gmail basandosi su una query.
-    Equivale a read_calendar ma usa sintassi di ricerca Gmail.
 
     Args:
         creds: Credenziali Gmail.

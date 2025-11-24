@@ -6,7 +6,11 @@ from dotenv import load_dotenv
 # Nota il punto . davanti
 from .utils import load_markdown_content
 from .tools import (
-    tool_datetime_now
+    tool_datetime_now,
+    tool_check_unread_emails,
+    tool_send_email_message,
+    tool_mark_as_read,
+    tool_trash_email
 )
 
 # --- MAGIA DEI PERCORSI (LA SOLUZIONE) ---
@@ -36,6 +40,11 @@ gmail_reader_agent = LlmAgent(
     instruction=load_markdown_content(INSTRUCTION_PATH),
     model=FLASH_MODEL,
     tools=[
+    tool_datetime_now,
+    tool_check_unread_emails,
+    tool_send_email_message,
+    tool_mark_as_read,
+    tool_trash_email
     ],
     sub_agents=[]
 )
