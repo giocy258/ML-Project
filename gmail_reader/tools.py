@@ -1,13 +1,3 @@
-from typing import Optional, Dict
-import datetime
-from zoneinfo import ZoneInfo
-
-
-def tool_datetime_now(tz_name: str = "Europe/Rome") -> datetime.datetime:
-
-    local_tz = ZoneInfo(tz_name)
-    return datetime.datetime.now(local_tz)
-
 import os.path
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -15,197 +5,192 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-# --- CONFIGURAZIONE ADK ---
-CONFIG = {
-    "CREDENTIALS_FILE": "credentials.json",
-    "TOKEN_FILE": "token.json",
-    "SCOPES": ['https://www.googleapis.com/auth/gmail.modify']
-}
+# --- CONFIGURAZIONE COSTANTE ---
+CREDENTIALS_FILE = "credentials.json"
+TOKEN_FILE = "token.json"
+SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
 
-# --- DEFINIZIONE REGOLE DEL CERVELLO LOCALE ---
-# Questo sostituisce OpenAI. Definiamo le keyword per ogni categoria.
+# Base di conoscenza (Regole)
 KNOWLEDGE_BASE = {
     "URGENTI": [
         "urgente", "scadenza", "immediato", "critico", "errore", 
-        "pagamento", "fattura scaduta", "alert", "importante", "subito"
+        "pagamento", "fattura", "alert", "importante", "subito"
     ],
     "LAVORO": [
         "meeting", "riunione", "progetto", "cliente", "report", 
-        "aggiornamento", "collega", "brief", "presentation", "budget", 
-        "fattura", "preventivo", "contratto"
+        "aggiornamento", "collega", "brief", "budget", "contratto"
     ],
     "PERSONALE": [
         "newsletter", "ordine", "spedizione", "offerta", "sconto", 
-        "social", "facebook", "instagram", "linkedin", "auguri", 
-        "invito", "prenotazione", "amazon", "tracking"
+        "social", "facebook", "linkedin", "auguri", "invito", "amazon"
     ]
 }
 
-class ADKAuth:
-    """Modulo Autenticazione Google OAuth2."""
+def get_gmail_service():
+    """Gestisce l'autenticazione e restituisce l'oggetto service."""
+    creds = None
+    if os.path.exists(TOKEN_FILE):
+        creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
     
-    @staticmethod
-    def authenticate():
-        creds = None
-        if os.path.exists(CONFIG["TOKEN_FILE"]):
-            creds = Credentials.from_authorized_user_file(CONFIG["TOKEN_FILE"], CONFIG["SCOPES"])
-        
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                if not os.path.exists(CONFIG["CREDENTIALS_FILE"]):
-                    print("[ERRORE] File credentials.json non trovato.")
-                    return None
-                
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    CONFIG["CREDENTIALS_FILE"], CONFIG["SCOPES"])
-                creds = flow.run_local_server(port=0)
-            
-            with open(CONFIG["TOKEN_FILE"], 'w') as token:
-                token.write(creds.to_json())
-        
-        return creds
-
-class ADKBrain:
-    """Motore Logico Locale (Sostituisce OpenAI)."""
-    
-    def analyze(self, sender, subject, snippet):
-        # Normalizzazione del testo (tutto minuscolo per confronto)
-        full_text = f"{subject} {snippet}".lower()
-        subject_lower = subject.lower()
-        
-        scores = {
-            "URGENTI": 0,
-            "LAVORO": 0,
-            "PERSONALE": 0
-        }
-
-        # Calcolo punteggi
-        for category, keywords in KNOWLEDGE_BASE.items():
-            for word in keywords:
-                # Regola: Se la parola e' nell'oggetto vale 3 punti, nello snippet vale 1 punto
-                if word in subject_lower:
-                    scores[category] += 3
-                elif word in full_text:
-                    scores[category] += 1
-        
-        # Logica di priorita'
-        # Se URGENTI ha anche solo 1 punto, vince su tutto (policy di sicurezza)
-        if scores["URGENTI"] > 0:
-            return "URGENTI"
-            
-        # Altrimenti vince chi ha il punteggio piu' alto
-        best_category = max(scores, key=scores.get)
-        
-        # Se il punteggio e' 0, non categorizzare
-        if scores[best_category] == 0:
-            return None
-            
-        return best_category
-
-class ADKDispatcher:
-    """Agente Operativo su Gmail."""
-    
-    def __init__(self):
-        self.creds = ADKAuth.authenticate()
-        if self.creds:
-            self.service = build('gmail', 'v1', credentials=self.creds)
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
         else:
-            raise Exception("Autenticazione fallita")
-        self.brain = ADKBrain()
+            if not os.path.exists(CREDENTIALS_FILE):
+                print("[ERRORE] File credentials.json mancante.")
+                return None
+            
+            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
+            creds = flow.run_local_server(port=0)
+        
+        with open(TOKEN_FILE, 'w') as token:
+            token.write(creds.to_json())
+    
+    return build('gmail', 'v1', credentials=creds)
 
-    def get_label_ids(self):
-        results = self.service.users().labels().list(userId='me').execute()
-        labels = results.get('labels', [])
-        label_map = {}
-        
-        target_categories = KNOWLEDGE_BASE.keys()
-        
-        for label in labels:
-            name = label['name'].upper()
-            if name in target_categories:
-                label_map[name] = label['id']
-        
-        return label_map
+def get_label_map(service):
+    """Restituisce un dizionario {NOME_CATEGORIA: ID_ETICHETTA}."""
+    results = service.users().labels().list(userId='me').execute()
+    labels = results.get('labels', [])
+    label_map = {}
+    
+    target_keys = KNOWLEDGE_BASE.keys()
+    
+    for label in labels:
+        name = label['name'].upper()
+        if name in target_keys:
+            label_map[name] = label['id']
+            
+    return label_map
 
-    def extract_header(self, payload, name):
-        headers = payload.get("headers", [])
-        for h in headers:
-            if h["name"] == name:
-                return h["value"]
-        return ""
 
-    def run(self):
-        print("--- AVVIO SISTEMA ADK (LOCAL LOGIC) ---")
-        
-        label_map = self.get_label_ids()
-        missing = [cat for cat in KNOWLEDGE_BASE.keys() if cat not in label_map]
-        
-        if missing:
-            print(f"[ATTENZIONE] Etichette mancanti su Gmail: {missing}")
-            print("Creale manualmente e riavvia lo script.")
-            return
+def calculate_category(subject, snippet):
+    """Analizza il testo e restituisce la categoria vincente."""
+    full_text = f"{subject} {snippet}".lower()
+    subject_lower = subject.lower()
+    
+    scores = {key: 0 for key in KNOWLEDGE_BASE}
 
-        print("Recupero email non lette...")
-        # Recupera solo ID e snippet per efficienza
-        results = self.service.users().messages().list(
+    for category, keywords in KNOWLEDGE_BASE.items():
+        for word in keywords:
+            # 3 punti se la parola e' nell'oggetto
+            if word in subject_lower:
+                scores[category] += 3
+            # 1 punto se e' nell'anteprima
+            elif word in full_text:
+                scores[category] += 1
+    
+    # Regola di priorita': Urgenti vince sempre se > 0
+    if scores["URGENTI"] > 0:
+        return "URGENTI"
+        
+    best_category = max(scores, key=scores.get)
+    
+    if scores[best_category] == 0:
+        return None
+        
+    return best_category
+
+def extract_header_value(payload, header_name):
+    """Estrae un valore specifico dagli header della mail."""
+    headers = payload.get("headers", [])
+    for h in headers:
+        if h["name"] == header_name:
+            return h["value"]
+    return ""
+
+# --- 3. FUNZIONI OPERATIVE (LE AZIONI) ---
+
+def fetch_unread_messages(service):
+    """Scarica la lista dei messaggi non letti."""
+    results = service.users().messages().list(
+        userId='me', 
+        q='is:unread in:inbox'
+    ).execute()
+    return results.get('messages', [])
+
+def get_message_details(service, msg_id):
+    """Scarica i dettagli di una singola mail."""
+    return service.users().messages().get(
+        userId='me', 
+        id=msg_id
+    ).execute()
+
+def move_message(service, msg_id, label_id):
+    """Sposta la mail applicando la label e rimuovendo INBOX."""
+    body_update = {
+        'addLabelIds': [label_id],
+        'removeLabelIds': ['INBOX']
+    }
+    try:
+        service.users().messages().modify(
             userId='me', 
-            q='is:unread in:inbox'
+            id=msg_id, 
+            body=body_update
         ).execute()
-        
-        messages = results.get('messages', [])
-        
-        if not messages:
-            print("Nessuna email da elaborare.")
-            return
+        return True
+    except HttpError:
+        return False
 
-        print(f"Trovate {len(messages)} email. Elaborazione in corso...")
+def main():
+    
+    # 1. Connessione
+    service = get_gmail_service()
+    if not service:
+        print("Impossibile connettersi a Gmail.")
+        return
 
-        for msg_ref in messages:
-            try:
-                msg = self.service.users().messages().get(
-                    userId='me', 
-                    id=msg_ref['id']
-                ).execute()
-                
-                payload = msg['payload']
-                subject = self.extract_header(payload, 'Subject')
-                sender = self.extract_header(payload, 'From')
-                snippet = msg.get('snippet', '')
-                
-                # Chiamata al Brain Locale
-                category = self.brain.analyze(sender, subject, snippet)
-                
-                if category:
-                    target_label_id = label_map[category]
-                    
-                    body = {
-                        'addLabelIds': [target_label_id],
-                        'removeLabelIds': ['INBOX']
-                    }
-                    
-                    self.service.users().messages().modify(
-                        userId='me', 
-                        id=msg_ref['id'], 
-                        body=body
-                    ).execute()
-                    
-                    print(f"[SPOSTATO] {subject[:40]}... -> {category}")
+    # 2. Mappatura Etichette
+    label_map = get_label_map(service)
+    missing_labels = [k for k in KNOWLEDGE_BASE if k not in label_map]
+    
+    if missing_labels:
+        print(f"[ATTENZIONE] Etichette mancanti su Gmail: {missing_labels}")
+        print("Lo script continuera', ma ignorera' queste categorie.")
+
+    # 3. Recupero messaggi
+    messages = fetch_unread_messages(service)
+    if not messages:
+        print("Nessuna mail non letta trovata.")
+        return
+
+    print(f"Trovate {len(messages)} mail da elaborare.")
+
+    # 4. Ciclo di elaborazione
+    for msg_ref in messages:
+        try:
+            msg_id = msg_ref['id']
+            msg_data = get_message_details(service, msg_id)
+            
+            # Estrazione Dati
+            payload = msg_data['payload']
+            subject = extract_header_value(payload, 'Subject')
+            sender = extract_header_value(payload, 'From')
+            snippet = msg_data.get('snippet', '') # Testo anteprima
+            
+            # Analisi Logica
+            category = calculate_category(subject, snippet)
+            
+            print(f"Analisi: {subject[:40]}...")
+
+            # Smistamento
+            if category and category in label_map:
+                label_id = label_map[category]
+                success = move_message(service, msg_id, label_id)
+                if success:
+                    print(f"   [SPOSTATO] -> {category}")
                 else:
-                    print(f"[IGNORATO] {subject[:40]}... (Nessuna corrispondenza)")
+                    print(f"   [ERRORE API] Impossibile spostare.")
+            else:
+                if category:
+                    print(f"   [SALTATO] Categoria '{category}' rilevata ma etichetta mancante.")
+                else:
+                    print(f"   [IGNORATO] Nessuna categoria corrispondente.")
                     
-            except HttpError as error:
-                print(f"[ERRORE API] {error}")
-            except Exception as e:
-                print(f"[ERRORE GENERICO] {e}")
+        except Exception as e:
+            print(f"   [ERRORE GENERICO] {e}")
 
-        print("--- TERMINE OPERAZIONI ---")
+    print("--- OPERAZIONI COMPLETATE ---")
 
 if __name__ == '__main__':
-    try:
-        agent = ADKDispatcher()
-        agent.run()
-    except Exception as e:
-        print(f"Errore critico: {e}")
-
+    main()
