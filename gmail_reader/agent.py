@@ -10,7 +10,8 @@ from .tools import (
     tool_check_unread_emails,
     tool_send_email_message,
     tool_mark_as_read,
-    tool_trash_email
+    tool_trash_email,
+    tool_search_emails_from_sender
 )
 
 # --- MAGIA DEI PERCORSI (LA SOLUZIONE) ---
@@ -44,7 +45,8 @@ gmail_reader_agent = LlmAgent(
     tool_check_unread_emails,
     tool_send_email_message,
     tool_mark_as_read,
-    tool_trash_email
+    tool_trash_email,
+    tool_search_emails_from_sender
     ],
     sub_agents=[]
 )
