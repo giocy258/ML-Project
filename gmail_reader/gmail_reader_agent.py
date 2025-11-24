@@ -1,42 +1,52 @@
-from dotenv import load_dotenv
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
 from google.adk.agents import LlmAgent
-from pathlib import Path
+import os
+from dotenv import load_dotenv
 
-PROMPT_FOLDER = Path(r"gmail_reader\prompts")
+# --- IMPORT RELATIVI CORRETTI ---
+# Nota il punto . davanti
+from .utils import load_markdown_content
+from .tools import (
+    tool_find_availability,
+    tool_list_upcoming_events,
+    tool_force_add_event,
+    tool_safe_add_event,
+    tool_delete_event,
+    tool_update_event,
+    tool_datetime_now
+)
 
-# Funzione per caricare la description
-def load_description(file_path):
-    try:
-        with open(file_path, 'r') as f:
-            return f.read()
-    except:
-        return """Un assistente esperto nella gestione delle email. Il suo compito è analizzare il testo grezzo di un'email e assegnarle una singola categoria."""
+# --- MAGIA DEI PERCORSI (LA SOLUZIONE) ---
+# 1. Ottieni il percorso assoluto della cartella dove si trova QUESTO file (agent.py)
+#    Indipendentemente da dove lanci il comando 'adk', questo sarà sempre corretto.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Funzione per caricare le istruzioni
-def load_instruction(file_path):
-    try:
-        with open(file_path, 'r') as f:
-            return f.read()
-    except:
-        return """Sei un assistente esperto nella gestione delle email. 
-Il tuo compito è analizzare il testo grezzo di un'email e assegnarle una singola categoria tra le seguenti:
-1. **URGENTI**: Qualsiasi email che richieda un'azione immediata, che contenga parole chiave come "urgente," "immediato," "scadenza," "critico," o che provenga da un mittente chiave (come il tuo capo o un'emergenza).
-2. **LAVORO**: Email relative a progetti, riunioni, colleghi, clienti, o attività professionali.
-3. **PERSONALE**: Email personali, newsletter, social network, acquisti, o comunicazioni familiari/amicali.
+# 2. Costruisci i percorsi per i prompt collegandoli a BASE_DIR
+PROMPTS_DIR = os.path.join(BASE_DIR, "prompts")
+DESCRIPTION_PATH = os.path.join(PROMPTS_DIR, "description.md")
+INSTRUCTION_PATH = os.path.join(PROMPTS_DIR, "instruction.md")
 
-Rispondi SOLO con il nome della categoria, nient'altro."""
+# 3. Costruisci il percorso per il .env (che sta un livello sopra, nella root)
+DOTENV_PATH = os.path.join(BASE_DIR, "..", ".env")
 
+# Carica le variabili d'ambiente
+load_dotenv(dotenv_path=DOTENV_PATH)
 
-# Funzione per interagire con l'LLM (simulata qui)
-def categorize_with_llm(email_content):
-    # QUI inseriresti la logica per chiamare l'API di un LLM (OpenAI, Gemini, Anthropic, ecc.)
-    # Inviando sia l'istruzione (instruction) che il contenuto dell'email (email_content)
-    # e recuperando la categoria.
+FLASH_MODEL = "gemini-2.5-flash"
+PRO_MODEL = "gemini-2.5-pro"
 
-    print(f"Richiesta all'LLM per l'email: {email_content[:50]}...")
+# --- DEFINIZIONE AGENTE ---
+gmail_reader_agent = LlmAgent(
+    name="gmail_reader_agent",
+    # Ora passiamo i percorsi calcolati, non stringhe fisse
+    description=load_markdown_content(DESCRIPTION_PATH),
+    instruction=load_markdown_content(INSTRUCTION_PATH),
+    model=FLASH_MODEL,
+    tools=[
+    ],
+    sub_agents=[]
+)
 
+<<<<<<< Updated upstream
     gmail_reader_agent = LlmAgent(
         name="gmail_reader_agent",
         description=load_description(file_path=PROMPT_FOLDER / "description.md"),
@@ -82,3 +92,6 @@ def run_agent():
 
 if __name__ == '__main__':
     run_agent()
+=======
+root_agent = gmail_reader_agent
+>>>>>>> Stashed changes
