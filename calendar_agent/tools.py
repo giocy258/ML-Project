@@ -1,8 +1,9 @@
 # Tools.py
+from typing import Optional
 import datetime
 from zoneinfo import ZoneInfo
-from calendarapi import accesso, read_calendar, add_calendar, delete_calendar, update_calendar
-from trova_un_buco import trova_slot_alternativo
+from .calendarapi import accesso, read_calendar, add_calendar, delete_calendar, update_calendar
+from .trova_un_buco import trova_slot_alternativo
 
 def tool_list_upcoming_events(days: int = 7):
     """
@@ -164,7 +165,14 @@ def tool_delete_event(summary: str, date_iso: str):
         return f"Errore tecnico durante l'eliminazione: {str(e)}"
 
 
-def tool_update_event(old_summary: str, old_date_iso: str, new_summary: str = None, new_start_iso: str = None, new_end_iso: str = None):
+def tool_update_event(
+    old_summary: str, 
+    old_date_iso: Optional[str]=None,
+    new_summary: Optional[str] = None,     # <--- CAMBIA QUI
+    new_start_iso: Optional[str] = None,   # <--- CAMBIA QUI
+    new_end_iso: Optional[str] = None      # <--- CAMBIA QUI
+):
+
     """
     Modifica un evento esistente. Cerca l'evento originale e applica i cambiamenti.
     Args:

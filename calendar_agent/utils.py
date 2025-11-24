@@ -1,5 +1,4 @@
 import datetime
-
 def load_markdown_content(file_path: str, variables: dict = None) -> str:
     """
     Legge un file Markdown.
