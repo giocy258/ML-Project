@@ -29,8 +29,8 @@ def stream_ollama(prompt, model, timeout=300):
 
 
 
-#Prende in input un evento (dizionario) o i singoli dati, imposta il datetime corretto, e aggiorna il json
 def add_event(event = None, title = None, start = None, end = None, path='streamlit/cal_events.json'):
+    """Prende in input un evento (dizionario) o i singoli dati, imposta il datetime corretto, e aggiorna il json"""
     with open(path, 'r', encoding='utf-8') as f:
         data = json.load(f)
 
