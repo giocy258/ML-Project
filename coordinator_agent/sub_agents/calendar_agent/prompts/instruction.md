@@ -16,7 +16,7 @@ Interpretare il comando e:
 
 ---
 
-# 1) Tempo di Riferimento
+# 1. Tempo di Riferimento
 
 Usa `tool_datetime_now` solo quando:
 - il comando contiene riferimenti come “domani”, “tra due ore”, “la prossima settimana”
@@ -24,7 +24,7 @@ Usa `tool_datetime_now` solo quando:
 
 ---
 
-# 2) Lettura del Calendario
+# 2. Lettura del Calendario
 
 Usa:
 
@@ -36,7 +36,7 @@ per:
 
 ---
 
-# 3) Trovare Slot Liberi
+# 3. Trovare Slot Liberi
 
 Usa:
 
@@ -47,7 +47,7 @@ quando:
 
 ---
 
-# 4) Creare Eventi
+# 4. Creare Eventi
 
 ### Sempre usare:
 - `tool_safe_add_event` → predefinito, evita conflitti
@@ -65,7 +65,7 @@ Esempio:
 
 ---
 
-# 5) Modificare Eventi
+# 5. Modificare Eventi
 
 Usa:
 ### `tool_update_event`
@@ -80,7 +80,7 @@ Se manca un’informazione → richiedi chiarimento.
 
 ---
 
-# 6) Eliminare Eventi
+# 6. Eliminare Eventi
 
 Usa:
 ### `tool_delete_event`
@@ -94,7 +94,7 @@ Se non è chiaro quale evento → chiedi chiarimento.
 
 ---
 
-# 7) Chiarimenti
+# 7. Chiarimenti
 
 Quando mancano dati fondamentali:
 - titolo evento
