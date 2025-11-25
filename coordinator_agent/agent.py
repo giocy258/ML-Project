@@ -5,13 +5,8 @@ from dotenv import load_dotenv
 # --- IMPORT RELATIVI CORRETTI ---
 # Nota il punto . davanti
 from .utils import load_markdown_content
-from .tools import (
-    tool_datetime_now,
-    tool_search_gmail,
-    tool_find_contacts,
-    tool_send_email_message,
-    tool_manage_email
-)
+from .sub_agents.calendar_agent.agent import calendaragent
+from .sub_agents.gmail_agent.agent import gmail_reader_agent
 
 # --- MAGIA DEI PERCORSI (LA SOLUZIONE) ---
 # 1. Ottieni il percorso assoluto della cartella dove si trova QUESTO file (agent.py)
@@ -33,20 +28,20 @@ FLASH_MODEL = "gemini-2.5-flash"
 PRO_MODEL = "gemini-2.5-pro"
 
 # --- DEFINIZIONE AGENTE ---
-gmail_reader_agent = LlmAgent(
+coordinator_agent = LlmAgent(
     name="gmail_reader_agent",
     # Ora passiamo i percorsi calcolati, non stringhe fisse
     description=load_markdown_content(DESCRIPTION_PATH),
     instruction=load_markdown_content(INSTRUCTION_PATH),
     model=FLASH_MODEL,
-    tools=[
-    tool_datetime_now,
-    tool_search_gmail,
-    tool_find_contacts,
-    tool_send_email_message,
-    tool_manage_email
-    ],
-    sub_agents=[]
+    tools=[],
+    sub_agents=[
+        gmail_reader_agent,
+        calendaragent
+        ]
 )
 
-root_agent = gmail_reader_agent
+root_agent = coordinator_agent
+
+def get_agent():
+    return root_agent

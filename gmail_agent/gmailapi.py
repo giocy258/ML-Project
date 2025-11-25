@@ -62,7 +62,7 @@ def accesso() -> Credentials:
 
     return creds
 
-def read_emails(creds: Credentials, query: str = 'is:unread', max_results: int = 10) -> List[Dict[str, Any]]:
+def read_emails(creds: Credentials, query: str = 'is:unread', max_results: int = 20) -> List[Dict[str, Any]]:
     """
     Legge le email da Gmail basandosi su una query.
 

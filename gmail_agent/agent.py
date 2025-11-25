@@ -6,13 +6,11 @@ from dotenv import load_dotenv
 # Nota il punto . davanti
 from .utils import load_markdown_content
 from .tools import (
-    tool_find_availability,
-    tool_list_upcoming_events,
-    tool_force_add_event,
-    tool_safe_add_event,
-    tool_delete_event,
-    tool_update_event,
-    tool_datetime_now
+    tool_datetime_now,
+    tool_search_gmail,
+    tool_find_contacts,
+    tool_send_email_message,
+    tool_manage_email
 )
 
 # --- MAGIA DEI PERCORSI (LA SOLUZIONE) ---
@@ -35,20 +33,18 @@ FLASH_MODEL = "gemini-2.5-flash"
 PRO_MODEL = "gemini-2.5-pro"
 
 # --- DEFINIZIONE AGENTE ---
-calendaragent = LlmAgent(
-    name="CalendarManagementAgent",
+gmail_reader_agent = LlmAgent(
+    name="gmail_reader_agent",
     # Ora passiamo i percorsi calcolati, non stringhe fisse
     description=load_markdown_content(DESCRIPTION_PATH),
     instruction=load_markdown_content(INSTRUCTION_PATH),
     model=FLASH_MODEL,
     tools=[
-        tool_find_availability,
-        tool_list_upcoming_events,
-        tool_force_add_event,
-        tool_safe_add_event,
-        tool_delete_event,
-        tool_update_event,
-        tool_datetime_now
+    tool_datetime_now,
+    tool_search_gmail,
+    tool_find_contacts,
+    tool_send_email_message,
+    tool_manage_email
     ],
     sub_agents=[]
 )
