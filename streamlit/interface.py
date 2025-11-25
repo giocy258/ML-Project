@@ -1,32 +1,44 @@
+import streamlit as st
 from pathlib import Path
 import sys
-
-# Path del file attuale
-HERE = Path(__file__).resolve()
-
-# ROOT del progetto → cartella superiore alla cartella "streamlit"
-ROOT_DIR = HERE.parent.parent
-
-# aggiungi al Pythonpath
-sys.path.insert(0, str(ROOT_DIR))
-
 import json
 import pandas as pd
-import streamlit as st
 from streamlit_calendar import calendar
 from cal_config import calendar_options, custom_css
-from calendar_agent.agent import root_agent
+import time
+
+# ============ INIZIALIZZAZIONE PERCORSI E AGENTE ============
+
+if "paths_initialized" not in st.session_state:
+    # Path del file attuale
+    HERE = Path(__file__).resolve()
+    # ROOT del progetto → cartella superiore alla cartella "streamlit"
+    ROOT_DIR = HERE.parent.parent
+    # aggiungi al Pythonpath SOLO UNA VOLTA
+    sys.path.insert(0, str(ROOT_DIR))
+    # Salva il percorso per l'accesso successivo
+    st.session_state["ROOT_DIR"] = ROOT_DIR
+    st.session_state["paths_initialized"] = True
+    print('Root: ', ROOT_DIR)
+else:
+    ROOT_DIR = st.session_state["ROOT_DIR"]
+
+# Percorso robusto per il file JSON degli eventi
+CAL_EVENTS_PATH = ROOT_DIR / 'streamlit' / 'cal_events.json'
+
+
+if "coordinator_agent" not in st.session_state:
+    from coordinator_agent.agent import get_agent
+    st.session_state.coordinator_agent = get_agent()
+    print('agente importato')
+
 
 USER_AVATAR = '🍌'
 BOT_AVATAR = '🗓️'
-OLLAMA_MODEL = 'llama3:8b-instruct-q5_1'
 
-pd.read_json(r'.\streamlit\cal_events.json')
+# La linea pd.read_json(r'.\streamlit\cal_events.json') è stata rimossa perché non assegnava un valore e poteva causare errori di percorso.
+
 st.set_page_config(page_title="Calendario", page_icon="🍌", layout="wide")
-
-# Imposta modello di default (Ollama)
-if "ollama_model" not in st.session_state:
-    st.session_state["ollama_model"] = OLLAMA_MODEL
 
 
 
@@ -46,39 +58,94 @@ with col2:
 
 
 
-# ============ CHAT ============
+# ============ CHAT E LOGICA AGENTE ============
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Mostra messaggi esistenti
 for message in st.session_state.messages:
     with st.chat_message(message["role"], avatar=message.get('avatar')):
         st.markdown(message["content"])
 
-if prompt:= st.chat_input('Ask me a question'):
-    with st.chat_message('user', avatar=USER_AVATAR):
+
+
+agent = st.session_state.coordinator_agent 
+
+if prompt := st.chat_input("Ask me a question"):
+
+    st.session_state.messages.append({
+        "role": "user",
+        "avatar": USER_AVATAR,
+        "content": prompt
+    })
+
+    with st.chat_message("user", avatar=USER_AVATAR):
         st.markdown(prompt)
 
-    st.session_state.messages.append({"role": "user", 'avatar': USER_AVATAR, "content": prompt})
-
-    with st.chat_message('assistant', avatar=BOT_AVATAR):
-        response = root_agent.run(prompt, history=st.session_state.messages)
-
-    st.session_state.messages.append({"role": "assistant", 'avatar': BOT_AVATAR, "content": response})
 
 
+    # ======== ESECUZIONE AGENTE ========
 
-# ============ SLIDEBAR ============
-with open('streamlit/cal_events.json', 'r', encoding='utf-8') as f:
-    cal_events = json.load(f)
-#print(type(cal_events), cal_events)
+    try:
+        print('1')
+        result = agent.chat.send_message(prompt)
+        print('2')
+
+        while result.requires_action:
+            tool_outputs = []
+
+            for action in result.actions:
+                output = action.call()
+                tool_outputs.append({"id": action.id, "output": output})
+
+            result = agent.chat.complete(tool_outputs)
+
+        response_text = getattr(result, "output_text", getattr(result, "text", ""))
+
+    except Exception as e:
+        st.error(f"❌ Errore nella toolchain ADK: {e}")
+        response_text = "⚠️ Errore interno eseguendo un tool."
+
+
+    # aggiungi messaggio dell’assistente
+
+    st.session_state.messages.append({
+        "role": "assistant",
+        "avatar": BOT_AVATAR,
+        "content": response_text
+    })
+
+    with st.chat_message("assistant", avatar=BOT_AVATAR):
+        st.markdown(response_text)
+
+
+
+# ============ SLIDEBAR (CALENDARIO) ============
+try:
+    with open(CAL_EVENTS_PATH, 'r', encoding='utf-8') as f:
+        cal_events = json.load(f)
+except FileNotFoundError:
+    st.sidebar.error(f"File eventi non trovato: {CAL_EVENTS_PATH}. Creando una lista vuota.")
+    cal_events = []
+except Exception as e:
+    st.sidebar.error(f"Errore durante la lettura del file eventi: {e}")
+    cal_events = []
+
 
 with st.sidebar:
-    calendar = calendar(
+    st.markdown("---")
+    st.markdown("<h2 style='text-align: center;'>Visualizzazione Eventi</h2>", unsafe_allow_html=True)
+    
+    calendar_output = calendar(
         events=cal_events,
         options=calendar_options,
         custom_css=custom_css,
-        key='calendar' # Assign a widget key to prevent state loss,
+        key='calendar' # Assign a widget key to prevent state loss
     )
+    
+    st.markdown("---")
     st.write("_#Se la visualizzazione del calendario esplode, riavviare la pagina_")
-
-#st.write(calendar)
+    
+    # Debug info (optional)
+    # st.write("Ultima interazione calendario:")
+    # st.write(calendar_output)
