@@ -2,23 +2,21 @@ from google.adk.agents import LlmAgent
 import os
 from dotenv import load_dotenv
 
-# --- IMPORT RELATIVI CORRETTI ---
-# Nota il punto . davanti
+# --- IMPORT RELATIVI ---
 from .utils import load_markdown_content
 from .sub_agents.calendar_agent.agent import calendaragent
 from .sub_agents.gmail_agent.agent import gmail_reader_agent
 
-# --- MAGIA DEI PERCORSI (LA SOLUZIONE) ---
-# 1. Ottieni il percorso assoluto della cartella dove si trova QUESTO file (agent.py)
-#    Indipendentemente da dove lanci il comando 'adk', questo sarà sempre corretto.
+# --- PERCORSI ASSOLUTI DINAMICI ---
+# 1. Percorso assoluto della cartella
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# 2. Costruisci i percorsi per i prompt collegandoli a BASE_DIR
+# 2. Percorsi per i prompt collegandoli a BASE_DIR
 PROMPTS_DIR = os.path.join(BASE_DIR, "prompts")
 DESCRIPTION_PATH = os.path.join(PROMPTS_DIR, "description.md")
 INSTRUCTION_PATH = os.path.join(PROMPTS_DIR, "instruction.md")
 
-# 3. Costruisci il percorso per il .env (che sta un livello sopra, nella root)
+# 3. Percorso per il .env (che sta un livello sopra, nella root)
 DOTENV_PATH = os.path.join(BASE_DIR, "..", ".env")
 
 # Carica le variabili d'ambiente
@@ -30,7 +28,6 @@ PRO_MODEL = "gemini-2.5-pro"
 # --- DEFINIZIONE AGENTE ---
 coordinator_agent = LlmAgent(
     name="coordinator_agent",
-    # Ora passiamo i percorsi calcolati, non stringhe fisse
     description=load_markdown_content(DESCRIPTION_PATH),
     instruction=load_markdown_content(INSTRUCTION_PATH),
     model=FLASH_MODEL,
