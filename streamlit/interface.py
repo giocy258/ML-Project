@@ -2,10 +2,8 @@ import streamlit as st
 from pathlib import Path
 import sys
 import json
-import pandas as pd
 from streamlit_calendar import calendar
 from cal_config import calendar_options, custom_css
-import time
 
 # ============ INIZIALIZZAZIONE PERCORSI E AGENTE ============
 
@@ -22,8 +20,7 @@ if "paths_initialized" not in st.session_state:
     print('Root: ', ROOT_DIR)
 else:
     ROOT_DIR = st.session_state["ROOT_DIR"]
-
-# Percorso robusto per il file JSON degli eventi
+    
 CAL_EVENTS_PATH = ROOT_DIR / 'streamlit' / 'cal_events.json'
 
 
