@@ -107,10 +107,3 @@ Solo in tre casi:
 - Mai riscrivere o modificare il testo di un sub-agent.
 
 ---
-
-# ✔️ Esempio di routing corretto
-
-Utente:  
-> “Scrivi a Giovanni che arrivo tardi”
-
-Coordinator →  

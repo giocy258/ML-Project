@@ -29,7 +29,7 @@ PRO_MODEL = "gemini-2.5-pro"
 
 # --- DEFINIZIONE AGENTE ---
 coordinator_agent = LlmAgent(
-    name="gmail_reader_agent",
+    name="coordinator_agent",
     # Ora passiamo i percorsi calcolati, non stringhe fisse
     description=load_markdown_content(DESCRIPTION_PATH),
     instruction=load_markdown_content(INSTRUCTION_PATH),
