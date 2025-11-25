@@ -61,7 +61,6 @@ def trova_slot_alternativo(creds: Credentials, duration_minutes: int, start_sear
                 start_str = event['start'].get('dateTime', event['start'].get('date'))
                 end_str = event['end'].get('dateTime', event['end'].get('date'))
                 
-                # --- FIX CRITICO: CONVERSIONE STR -> DATETIME ---
                 try:
                     # fromisoformat gestisce la stringa ISO. 
                     # Se c'è data pura (YYYY-MM-DD), aggiungiamo orario dummy per non crashare
@@ -73,7 +72,7 @@ def trova_slot_alternativo(creds: Credentials, duration_minutes: int, start_sear
                 except ValueError:
                     continue # Se la data è strana, saltiamo l'evento
                 
-                # Aggiungiamo il buffer (es. 30 min di pausa tra un evento e l'altro)
+                # Aggiungiamo il buffer, per esempio 30 min di pausa tra un evento e l'altro
                 start_busy = start_busy - datetime.timedelta(minutes=buffer_minutes)
                 end_busy = end_busy + datetime.timedelta(minutes=buffer_minutes)
 
@@ -93,14 +92,13 @@ def trova_slot_alternativo(creds: Credentials, duration_minutes: int, start_sear
                          current_search_time = current_search_time + datetime.timedelta(minutes=1)
                     current_search_time = current_search_time.replace(second=0, microsecond=0)
 
-            # Dopo aver controllato tutti gli eventi del giorno...
-            # Verifichiamo se lo slot (che ora è libero da conflitti) sta dentro il limite delle 20:00
+            # Dopo aver controllato tutti gli eventi del giorno verifichiamo se lo slot (che ora è libero da conflitti) sta dentro il limite delle 20:00
             final_slot_end = current_search_time + datetime.timedelta(minutes=duration_minutes)
             
             if final_slot_end <= day_end_limit:
                 # TROVATO!
                 formatted_time = current_search_time.strftime('%A %d/%m alle %H:%M')
-                return f"✅ Slot trovato: {formatted_time} (Durata: {duration_minutes} min)"
+                return f" Slot trovato: {formatted_time} (Durata: {duration_minutes} min)"
             
             # Se siamo arrivati a sera senza trovare spazio, passiamo a domani
             current_search_time = day_start_limit + datetime.timedelta(days=1)

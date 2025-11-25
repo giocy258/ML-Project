@@ -10,7 +10,6 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-# --- CONFIGURAZIONE ---
 # Se modifichi questi scope, elimina il file token.json.
 SCOPES = [
     'https://www.googleapis.com/auth/gmail.readonly',
@@ -24,11 +23,9 @@ def accesso() -> Credentials:
     """
     creds = None
     
-    # --- MAGIA DEI PERCORSI ASSOLUTI ---
-    # 1. Trova la cartella dove si trova fisicamente QUESTO file
     base_dir = os.path.dirname(os.path.abspath(__file__))
     
-    # 2. Costruisce i percorsi completi (token separato per gmail)
+    # Costruisce i percorsi completi (token separato per gmail)
     token_path = os.path.join(base_dir, "token.json") 
     creds_path = os.path.join(base_dir, "credentials.json")
     # -----------------------------------
@@ -79,7 +76,7 @@ def read_emails(creds: Credentials, query: str = 'is:unread', max_results: int =
         
         print(f"Cercando email con query: '{query}'...")
         
-        # 1. Ottiene la lista degli ID dei messaggi (leggero)
+        # 1) Ottiene la lista degli ID dei messaggi (leggero)
         results = service.users().messages().list(userId='me', q=query, maxResults=max_results).execute()
         messages = results.get('messages', [])
 
@@ -89,8 +86,7 @@ def read_emails(creds: Credentials, query: str = 'is:unread', max_results: int =
 
         parsed_messages = []
         
-        # 2. Ottiene i dettagli (payload) per ogni messaggio trovato
-        # Nota: in produzione massiva si userebbe batch_execute, qui ok loop semplice
+        # 2) Ottiene i dettagli (payload) per ogni messaggio trovato
         for msg in messages:
             # format='metadata' scarica solo header e non tutto il corpo (più veloce)
             txt = service.users().messages().get(userId='me', id=msg['id'], format='full').execute()

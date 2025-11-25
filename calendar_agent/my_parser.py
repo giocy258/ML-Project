@@ -14,17 +14,15 @@ def format_event(event_data: dict) -> dict:
     - colorId (str)
     """
     
-    # 1. Recupero campi base
+    # 1) Recupero campi base
     summary = event_data.get('summary', 'Nuovo Evento')
     location = event_data.get('location', '')
     description = event_data.get('description', '')
     
-    # 2. Gestione Colori (mapping semplificato)
-    # Se viene passato un numero o un ID colore, lo usiamo.
-    # Altrimenti default (None lascia il colore predefinito del calendario)
+    #2) colore del calendario
     color_id = event_data.get('colorId')
     
-    # 3. Gestione Date (Start e End)
+    # 3) Gestione Date (Start e End)
     # Le API di Google vogliono: {'dateTime': 'ISO_STRING', 'timeZone': '...'}
     # Il tuo tools.py potrebbe passare già il dict oppure solo la stringa.
     start_data = _format_date_field(event_data.get('start'))
@@ -42,7 +40,7 @@ def format_event(event_data: dict) -> dict:
         }
     }
 
-    # Aggiungi colorId solo se presente (altrimenti Google usa il default)
+    # Aggiungi colorId se è presente altrimenti Google usa il default
     if color_id:
         google_event_resource['colorId'] = str(color_id)
 
@@ -58,14 +56,14 @@ def _format_date_field(date_value):
         now = datetime.datetime.now().isoformat()
         return {'dateTime': now, 'timeZone': 'Europe/Rome'}
 
-    # Se è già un dizionario (es. creato da tools.py), lo ritorniamo così com'è
+    # Se è già un dizionario  lo ritorniamo così com'è
     if isinstance(date_value, dict):
         # Assicuriamoci che ci sia la timeZone se è un dateTime
         if 'dateTime' in date_value and 'timeZone' not in date_value:
             date_value['timeZone'] = 'Europe/Rome'
         return date_value
 
-    # Se è una stringa (es. "2023-11-24T15:00:00"), la impacchettiamo
+    # Se è una stringa 
     if isinstance(date_value, str):
         return {
             'dateTime': date_value,

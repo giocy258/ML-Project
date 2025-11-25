@@ -2,8 +2,6 @@ from google.adk.agents import LlmAgent
 import os
 from dotenv import load_dotenv
 
-# --- IMPORT RELATIVI CORRETTI ---
-# Nota il punto . davanti
 from .utils import load_markdown_content
 from .tools import (
     tool_datetime_now,
@@ -13,9 +11,7 @@ from .tools import (
     tool_manage_email
 )
 
-# --- MAGIA DEI PERCORSI (LA SOLUZIONE) ---
-# 1. Ottieni il percorso assoluto della cartella dove si trova QUESTO file (agent.py)
-#    Indipendentemente da dove lanci il comando 'adk', questo sarà sempre corretto.
+# 1. Ottieni il percorso assoluto della cartella dove si trova QUESTO file (agent.py)  indipendentemente da dove lanci il comando 'adk', questo sarà sempre corretto.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # 2. Costruisci i percorsi per i prompt collegandoli a BASE_DIR
@@ -32,10 +28,8 @@ load_dotenv(dotenv_path=DOTENV_PATH)
 FLASH_MODEL = "gemini-2.5-flash"
 PRO_MODEL = "gemini-2.5-pro"
 
-# --- DEFINIZIONE AGENTE ---
 gmail_reader_agent = LlmAgent(
     name="gmail_reader_agent",
-    # Ora passiamo i percorsi calcolati, non stringhe fisse
     description=load_markdown_content(DESCRIPTION_PATH),
     instruction=load_markdown_content(INSTRUCTION_PATH),
     model=FLASH_MODEL,

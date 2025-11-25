@@ -18,11 +18,6 @@ def tool_datetime_now(tz_name: str = "Europe/Rome") -> datetime.datetime:
     local_tz = ZoneInfo(tz_name)
     return datetime.datetime.now(local_tz)
 
-# Esempio di utilizzo (solo per test):
-# ora = get_current_datetime()
-# print(f"L'ora attuale a Roma è: {ora}")
-
-
 def tool_list_upcoming_events(days: int = 7) -> str:
     """
     Elenca gli eventi in calendario per i prossimi N giorni.
@@ -154,13 +149,13 @@ def tool_delete_event(summary: str, date_iso: str) -> str:
     """
     creds = accesso()
     
-    # 1. Cerchiamo l'evento per ottenere il suo ID
+    # 1) Cerchiamo l'evento per ottenere il suo ID
     try:
         target_date = datetime.datetime.fromisoformat(date_iso)
     except ValueError:
         return "Errore: Data non valida. Usa formato ISO (YYYY-MM-DDTHH:MM:SS)."
 
-    # Cerchiamo in una finestra stretta (giorno stesso)
+    # Cerchiamo in una finestra stretta, quindi scegliamo il giorno stesso
     date_info = {
         "start": target_date.date().isoformat(),
         "end": target_date.date().isoformat()
@@ -209,7 +204,7 @@ def tool_update_event(
     """
     creds = accesso()
     
-    # 1. Troviamo l'evento vecchio
+    # 1) Troviamo l'evento vecchio
     if not old_date_iso:
         return "Errore: 'old_date_iso' è obbligatorio per trovare l'evento da aggiornare."
         
@@ -233,7 +228,7 @@ def tool_update_event(
     if not old_event_obj:
         return f"Non ho trovato l'evento '{old_summary}' da modificare."
 
-    # 2. Costruiamo il nuovo oggetto evento
+    # 2) Costruiamo il nuovo oggetto evento
     # Manteniamo i campi vecchi se i nuovi non sono specificati
     new_event_dict = {
         "summary": new_summary if new_summary is not None else old_event_obj.get("summary"),
@@ -241,7 +236,7 @@ def tool_update_event(
         "location": new_location if new_location is not None else old_event_obj.get("location", ""), 
     }
 
-    # Gestione date (se cambiano)
+    # Qua vengono gestite le date se cambiano
     if new_start_iso and new_end_iso:
         new_event_dict["start"] = {"dateTime": new_start_iso, "timeZone": "Europe/Rome"}
         new_event_dict["end"] = {"dateTime": new_end_iso, "timeZone": "Europe/Rome"}
@@ -250,7 +245,7 @@ def tool_update_event(
         new_event_dict["start"] = old_event_obj.get("start")
         new_event_dict["end"] = old_event_obj.get("end")
 
-    # 3. Chiamiamo l'update
+    # 3) Chiamiamo l'update
     try:
         update_calendar(creds, old_event_obj, new_event_dict)
         return "Evento aggiornato con successo."

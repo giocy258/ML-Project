@@ -22,15 +22,14 @@ def accesso() -> Credentials:
     SCOPES = ['https://www.googleapis.com/auth/calendar']
     creds = None
     
-    # --- MAGIA DEI PERCORSI ASSOLUTI ---
-    # 1. Trova la cartella dove si trova fisicamente QUESTO file (calendarapi.py)
+    
+    # 1) Trova la cartella dove si trova fisicamente QUESTO file (calendarapi.py)
     base_dir = os.path.dirname(os.path.abspath(__file__))
     
-    # 2. Costruisce i percorsi completi ("C:/.../calendar/token.json")
+    # 2) Costruisce i percorsi completi ("C:/.../calendar/token.json")
     token_path = os.path.join(base_dir, "token.json")
     creds_path = os.path.join(base_dir, "credentials.json")
-    # -----------------------------------
-
+    
     # Usa token_path invece di "token.json"
     if os.path.exists(token_path):
         creds = Credentials.from_authorized_user_file(token_path, SCOPES)
@@ -119,11 +118,11 @@ def read_calendar(creds: Credentials, date_info: dict) -> list:
            # incrementa la data per il giorno successivo
             current_date += datetime.timedelta(days=1)
 
-        if not all_events: # evitabile, logging
+        if not all_events:
             print("Nessun evento trovato nell'intervallo di date specificato.")  
             return []
 
-        for event in all_events: # evitabile, logging
+        for event in all_events:
             start = event["start"].get("dateTime", event["start"].get("date"))
             print(start, event["summary"])
 
