@@ -90,7 +90,6 @@ def read_emails(creds: Credentials, query: str = 'is:unread', max_results: int =
         parsed_messages = []
         
         # 2. Ottiene i dettagli (payload) per ogni messaggio trovato
-        # Nota: in produzione massiva si userebbe batch_execute, qui ok loop semplice
         for msg in messages:
             # format='metadata' scarica solo header e non tutto il corpo (più veloce)
             txt = service.users().messages().get(userId='me', id=msg['id'], format='full').execute()
@@ -154,7 +153,7 @@ def send_email(creds: Credentials, to: str, subject: str, body: str) -> Optional
 
 def trash_email(creds: Credentials, msg_id: str):
     """
-    Sposta un'email nel cestino. Equivale a delete_calendar.
+    Sposta un'email nel cestino.
     """
     try:
         service = build("gmail", "v1", credentials=creds)
@@ -167,7 +166,7 @@ def trash_email(creds: Credentials, msg_id: str):
 
 def update_email_labels(creds: Credentials, msg_id: str, add_labels: List[str] = [], remove_labels: List[str] = []):
     """
-    Modifica le etichette di un'email. Equivale a update_calendar.
+    Modifica le etichette di un'email.
     Utile per segnare come letto (remove_labels=['UNREAD']) o archiviare (remove_labels=['INBOX']).
     """
     try:
