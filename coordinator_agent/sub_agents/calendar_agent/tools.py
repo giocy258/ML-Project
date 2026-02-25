@@ -1,5 +1,6 @@
 from typing import Optional, Dict
 import datetime
+import json
 from zoneinfo import ZoneInfo
 from .calendarapi import accesso, read_calendar, add_calendar, delete_calendar, update_calendar
 from .trova_un_buco import trova_slot_alternativo
@@ -256,3 +257,28 @@ def tool_update_event(
         return "Evento aggiornato con successo."
     except Exception as e:
         return f"Errore aggiornamento: {str(e)}"
+    
+def add_event(title = None, start = None, end = None, path='streamlit/cal_events.json'):
+    """
+    Prende in input un evento (dizionario) o i singoli dati, imposta il datetime corretto, e aggiorna il json del calendario.
+    
+    Args:
+        title: Il nome dell'evento da salvare
+        start: data e ora di inizio
+        end: data e ora di fine
+    """
+    with open(path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    start_formatted = datetime.strptime(start, "%Y-%m-%dT%H:%M:%S")
+    end_formatted = datetime.strptime(end, "%Y-%m-%dT%H:%M:%S")
+    event = {
+        "title": title,
+        "start": start_formatted,
+        "end": end_formatted
+    }
+
+    data.append(event)
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
+        return True

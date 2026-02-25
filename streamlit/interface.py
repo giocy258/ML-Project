@@ -11,11 +11,41 @@ ROOT_DIR = HERE.parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
 import json
+<<<<<<< HEAD
 import pandas as pd
 import streamlit as st
 from streamlit_calendar import calendar
 from cal_config import calendar_options, custom_css
 from calendar_agent.agent import root_agent
+=======
+from streamlit_calendar import calendar
+from cal_config import calendar_options, custom_css
+
+# ============ INIZIALIZZAZIONE PERCORSI E AGENTE ============
+
+if "paths_initialized" not in st.session_state:
+    # Path del file attuale
+    HERE = Path(__file__).resolve()
+    # ROOT del progetto → cartella superiore alla cartella "streamlit"
+    ROOT_DIR = HERE.parent.parent
+    # aggiungi al Pythonpath SOLO UNA VOLTA
+    sys.path.insert(0, str(ROOT_DIR))
+    # Salva il percorso per l'accesso successivo
+    st.session_state["ROOT_DIR"] = ROOT_DIR
+    st.session_state["paths_initialized"] = True
+    print('Root: ', ROOT_DIR)
+else:
+    ROOT_DIR = st.session_state["ROOT_DIR"]
+    
+CAL_EVENTS_PATH = ROOT_DIR / 'streamlit' / 'cal_events.json'
+
+
+if "coordinator_agent" not in st.session_state:
+    from coordinator_agent.agent import get_agent
+    st.session_state.coordinator_agent = get_agent()
+    print('agente importato')
+
+>>>>>>> a232256997332e00bfb8d84205fa72c023f29f32
 
 USER_AVATAR = '🍌'
 BOT_AVATAR = '🗓️'

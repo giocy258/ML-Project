@@ -92,8 +92,12 @@ Prima devi sempre:
 
 Se mancano informazioni indispensabili:
 - destinatario
+- gender del destinatario
+- gender dell'utente
 - contenuto del messaggio
 - oggetto
+- come firmare
+- stile dell'email
 - quale email eliminare
 - quale contatto usare
 
